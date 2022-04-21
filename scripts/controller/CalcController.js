@@ -2,13 +2,14 @@ class CalcController {
   #displayEl
   #dataEl
   #horaEl
-  #operation
+  #operation = []
+  #lastOperator = ''
+  #lastNumber = ''
 
   constructor() {
     this.#displayEl = document.querySelector('#display')
     this.#dataEl = document.querySelector('#data')
     this.#horaEl = document.querySelector('#hora')
-    this.#operation = []
     this.initialize()
   }
 
@@ -19,6 +20,8 @@ class CalcController {
     setInterval(() => {
       this.setDisplayDateTime()
     }, 1000)
+
+    this.showDisplay()
   }
 
   setDisplayDateTime() {
@@ -60,10 +63,12 @@ class CalcController {
 
   clearAll() {
     this.#operation = []
+    this.showDisplay()
   }
 
   clearEntry() {
     this.#operation.pop()
+    this.showDisplay()
   }
 
   getLastOperation() {
@@ -78,16 +83,81 @@ class CalcController {
     this.#operation[this.#operation.length -1] = value
   }
 
+  getResult() {
+    return eval(this.#operation.join(""))
+  }
+
+  calcula() {
+    let last = ''
+
+    this.#lastOperator = this.getLastItem()
+
+    if (this.#operation.length < 3) {
+      let firstItem = this.#operation[0]
+      this.#operation = [firstItem, this.#lastOperator, this.#lastNumber]
+    }
+
+    if (this.#operation.length > 3) {
+      last = this.#operation.pop()
+      this.#lastNumber = this.getResult()
+    }
+
+    else if (this.#operation.length === 3) {
+      this.#lastNumber = this.getResult(false)
+    }
+
+    let result = this.getResult()
+
+    if (last === '%') {
+
+      result /= 100
+      this.#operation = [result]
+
+    } else {
+      this.#operation = [result]
+
+      if (last) this.#operation.push(last)
+    }
+
+    this.showDisplay()
+  }
+
   pushOperation(value) {
     this.#operation.push(value)
 
     if (this.#operation.length > 3) {
-      
+      this.calcula()
     }
+  }
+
+  getLastItem(isOperator = true) {
+    let lastItem = ""
+
+    for (let i = this.#operation.length -1; i >= 0; i--) {
+      if (this.isOperator(this.#operation[i]) === isOperator) {
+        lastItem = this.#operation[i]
+        break
+      }
+    }
+
+    if (!lastItem) {
+      lastItem = isOperator ? this.#lastOperator : this.#lastNumber
+    }
+
+    return lastItem
+  }
+
+  showDisplay() {
+    let lastNumber = this.getLastItem(false)
+
+    if (!lastNumber) lastNumber = 0
+
+    this.displayCalc = lastNumber
   }
 
   addOperation(value) {
     if (isNaN(this.getLastOperation())) {
+
       if (this.isOperator(value) && this.#operation.length > 0) {
         this.setLastOperation(value)   // trocar o operador
 
@@ -95,6 +165,7 @@ class CalcController {
 
       } else {
         this.pushOperation(value)
+        this.showDisplay()
       }
 
     } else {
@@ -105,10 +176,11 @@ class CalcController {
       } else {
         const newValue = this.getLastOperation().toString() + value.toString()
         this.setLastOperation(+newValue)
+
+        // atualizar display
+        this.showDisplay()
       }
     }
-
-    console.log(this.#operation)
   }
 
   setError() {
@@ -150,7 +222,7 @@ class CalcController {
         break;
 
       case 'igual':
-
+        this.calcula()
         break;
 
       case '0':
