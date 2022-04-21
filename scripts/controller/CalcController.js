@@ -63,6 +63,8 @@ class CalcController {
 
   clearAll() {
     this.#operation = []
+    this.#lastNumber = ''
+    this.#lastOperator = ''
     this.showDisplay()
   }
 
@@ -84,7 +86,8 @@ class CalcController {
   }
 
   getResult() {
-    return eval(this.#operation.join(""))
+    const result = eval(this.#operation.join(""))
+    return result
   }
 
   calcula() {
@@ -152,7 +155,10 @@ class CalcController {
 
     if (!lastNumber) lastNumber = 0
 
-    this.displayCalc = lastNumber
+    // limita o número de casas decimais
+    const strnum = lastNumber.toString().substring(0,12);
+
+    this.displayCalc = +strnum // lastNumber
   }
 
   addOperation(value) {
@@ -160,8 +166,6 @@ class CalcController {
 
       if (this.isOperator(value) && this.#operation.length > 0) {
         this.setLastOperation(value)   // trocar o operador
-
-      } else if (isNaN(value)) {
 
       } else {
         this.pushOperation(value)
@@ -185,6 +189,19 @@ class CalcController {
 
   setError() {
     this.displayCalc = "Error"
+  }
+
+  addPonto() {
+    const lastOperation = this.getLastOperation()
+
+    if (this.isOperator(lastOperation) || !lastOperation) {
+      this.pushOperation('0.')
+
+    } else {
+      this.setLastOperation(lastOperation.toString() + '.')
+    }
+
+    this.showDisplay()
   }
 
   execBtn(value) {
@@ -218,7 +235,7 @@ class CalcController {
         break;
 
       case 'ponto':
-        this.addOperation('.')
+        this.addPonto()
         break;
 
       case 'igual':
