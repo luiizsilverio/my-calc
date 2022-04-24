@@ -5,19 +5,29 @@ class CalcController {
   #operation = []
   #lastOperator = ''
   #lastNumber = ''
+  #audioOn = false
+  #audio
 
   constructor() {
     this.#displayEl = document.querySelector('#display')
     this.#dataEl = document.querySelector('#data')
     this.#horaEl = document.querySelector('#hora')
+    this.#audio = new Audio('click.mp3')
     this.initialize()
-    this.initKeyboard()
-    this.pasteFromClipboard()
   }
 
   initialize() {
+    this.initKeyboard()
+    this.pasteFromClipboard()
     this.initButtonsEvents()
     this.setDisplayDateTime()
+
+    // ao clicar 2x no botão AC, ativa ou desativa o som
+    document.querySelectorAll('.btn-ac').forEach((btn) => {
+      btn.addEventListener('dblclick', (e) => {
+        this.toggleAudio()
+      })
+    })
 
     setInterval(() => {
       this.setDisplayDateTime()
@@ -35,8 +45,21 @@ class CalcController {
       this.displayTime = this.dataAtual.toLocaleTimeString("pt-BR")
   }
 
+  toggleAudio() {
+    this.#audioOn = !this.#audioOn
+  }
+
+  playAudio() {
+    if (this.#audioOn) {
+      this.#audio.currentTime = 0
+      this.#audio.play()
+    }
+  }
+
   initKeyboard() {
     document.addEventListener('keyup', (ev) => {
+      this.playAudio()
+
       switch (ev.key) {
         case 'Escape':
           this.clearAll()
@@ -112,6 +135,11 @@ class CalcController {
   }
 
   set displayCalc(value) {
+    if (value.toString().length > 10) {
+      this.setError()
+      return
+    }
+
     this.#displayEl.innerHTML = value
   }
 
@@ -160,8 +188,14 @@ class CalcController {
   }
 
   getResult() {
-    const result = eval(this.#operation.join(""))
-    return result
+    try {
+      return eval(this.#operation.join(""))
+    }
+    catch(erro) {
+      setTimeout(() => {
+        this.setError()
+      }, 1)
+    }
   }
 
   calcula() {
@@ -230,7 +264,7 @@ class CalcController {
     if (!lastNumber) lastNumber = 0
 
     // limita o número de casas decimais
-    const strnum = lastNumber.toString().substring(0,11);
+    const strnum = lastNumber.toString() //.substring(0, 10);
 
     this.displayCalc = +strnum // lastNumber
   }
@@ -280,6 +314,8 @@ class CalcController {
   }
 
   execBtn(value) {
+    this.playAudio()
+
     switch (value) {
       case 'ac':
         this.clearAll()
