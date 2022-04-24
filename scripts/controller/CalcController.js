@@ -11,6 +11,8 @@ class CalcController {
     this.#dataEl = document.querySelector('#data')
     this.#horaEl = document.querySelector('#hora')
     this.initialize()
+    this.initKeyboard()
+    this.pasteFromClipboard()
   }
 
   initialize() {
@@ -31,6 +33,78 @@ class CalcController {
         year: 'numeric'
       })
       this.displayTime = this.dataAtual.toLocaleTimeString("pt-BR")
+  }
+
+  initKeyboard() {
+    document.addEventListener('keyup', (ev) => {
+      switch (ev.key) {
+        case 'Escape':
+          this.clearAll()
+          break;
+
+        case 'Backspace':
+          this.clearEntry()
+          break;
+
+        case '+':
+        case '-':
+        case '*':
+        case '/':
+        case '%':
+          this.addOperation(ev.key)
+          break;
+
+        case '.':
+        case ',':
+          this.addPonto()
+          break;
+
+        case '=':
+        case 'Enter':
+          this.calcula()
+          break;
+
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+          this.addOperation(+ev.key)
+          break;
+
+        case 'c':
+          if (ev.ctrlKey) this.copyToClipboard()
+          break
+      }
+    })
+  }
+
+  copyToClipboard() {
+    let input = document.createElement('input')
+
+    input.value = this.displayCalc
+
+    document.body.appendChild(input)
+
+    input.select() // seleciona o conteúdo do input
+
+    document.execCommand("copy") // copia para a área de trabalho
+
+    input.remove()
+  }
+
+  pasteFromClipboard() {
+    document.addEventListener('paste', (ev) => {
+
+      const text = ev.clipboardData.getData('Text')
+
+      this.displayCalc = parseFloat(text)
+    })
   }
 
   get displayCalc() {
@@ -156,14 +230,13 @@ class CalcController {
     if (!lastNumber) lastNumber = 0
 
     // limita o número de casas decimais
-    const strnum = lastNumber.toString().substring(0,12);
+    const strnum = lastNumber.toString().substring(0,11);
 
     this.displayCalc = +strnum // lastNumber
   }
 
   addOperation(value) {
     if (isNaN(this.getLastOperation())) {
-
       if (this.isOperator(value) && this.#operation.length > 0) {
         this.setLastOperation(value)   // trocar o operador
 
@@ -179,7 +252,7 @@ class CalcController {
 
       } else {
         const newValue = this.getLastOperation().toString() + value.toString()
-        this.setLastOperation(+newValue)
+        this.setLastOperation(newValue)
 
         // atualizar display
         this.showDisplay()
@@ -193,6 +266,8 @@ class CalcController {
 
   addPonto() {
     const lastOperation = this.getLastOperation()
+
+    if (typeof lastOperation === 'string' && lastOperation.includes('.')) return
 
     if (this.isOperator(lastOperation) || !lastOperation) {
       this.pushOperation('0.')
